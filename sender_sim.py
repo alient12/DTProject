@@ -5,6 +5,8 @@ import json
 import random
 import numpy as np
 
+import time
+
 async def send_robot_joints_randomly(websocket, path):
     try:
         while True:
@@ -27,9 +29,9 @@ async def send_robot_joints(websocket, path):
                 
                 data = {}
                 data['joints_r'] = joints.tolist()[:7]
-                data['joints_e'] = (data['joints_r'] + np.random.random(7)).tolist()
+                data['joints_e'] = (data['joints_r'] + np.ones((7)) * 0.5 * np.sin(time.time())).tolist()
                 data['endeff_r'] = joints.tolist()[7:]
-                data['endeff_e'] = (data['endeff_r'] + 0.01 * np.random.random(3)).tolist()
+                data['endeff_e'] = (data['endeff_r'] + np.ones((3)) * 0.01 * np.sin(time.time())).tolist()
 
                 await websocket.send(json.dumps(data))  # Convert numpy array to list for JSON serialization
                 print(f"Sent joints: {data}")
@@ -40,9 +42,9 @@ async def send_robot_joints(websocket, path):
 
                 data = {}
                 data['joints_r'] = joints.tolist()[:7]
-                data['joints_e'] = (data['joints_r'] + np.random.random(7)).tolist()
+                data['joints_e'] = (data['joints_r'] + np.ones((7)) * 0.5 * np.sin(time.time())).tolist()
                 data['endeff_r'] = joints.tolist()[7:]
-                data['endeff_e'] = (data['endeff_r'] + 0.01 * np.random.random(3)).tolist()
+                data['endeff_e'] = (data['endeff_r'] + np.ones((3)) * 0.01 * np.sin(time.time())).tolist()
 
                 await websocket.send(json.dumps(data))
                 print(f"Sent joints: {data}")
