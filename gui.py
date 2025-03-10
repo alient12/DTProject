@@ -42,8 +42,10 @@ t10 = np.linspace(0, 1, 20)
 xyz = np.zeros((3, t10.shape[0]))
 joints = np.zeros((6, t.shape[0]))
 
+fade_trajectory = False
+
 class MainWindow(QMainWindow, Form):
-    def __init__(self, shared_data, event):
+    def __init__(self, shared_data, event, queue):
         super(MainWindow, self).__init__()
         self.setupUi(self)
 
@@ -54,8 +56,9 @@ class MainWindow(QMainWindow, Form):
         
         self.shared_data = shared_data
         self.event = event
+        self.queue = queue
         
-        self.plot_process = PlotProcess(shared_data, event)
+        self.plot_process = PlotProcess(shared_data, event, queue)
         self.plot_process.start()
 
         self.plot_timer = QtCore.QTimer()
@@ -65,9 +68,10 @@ class MainWindow(QMainWindow, Form):
         # Timer to update data for 3D plot process
         self.plot3d_timer = QtCore.QTimer()
         self.plot3d_timer.timeout.connect(self.update_3d_plot)
-        self.plot3d_timer.start(50)  # Update every 100 ms
+        self.plot3d_timer.start(50)  # Update every 50 ms
 
         self.isFullscreen = False
+    
     
     def init_ui(self):
         self.init_plot()
@@ -107,7 +111,7 @@ class MainWindow(QMainWindow, Form):
             self.jline2.append(ax.plot(x, y, 'r-', lw=1, label="sensor")[0])
             
             ax.grid()
-            ax.set_ylim(-180, 180)
+            ax.set_ylim(-5, 5)
             # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=3, fancybox=True, shadow=True)
             ax.set_facecolor((0.0, 0.0, 0.0, 0.0))
             ax.tick_params(axis='x', colors='k');[t.set_color('gray') for t in ax.xaxis.get_ticklabels()]
@@ -138,6 +142,26 @@ class MainWindow(QMainWindow, Form):
         layout = QVBoxLayout(self.plot3d_widget)
         layout.addWidget(self.plot3d_canvas)
         layout.addWidget(self.plot3d_navi)
+
+        if fade_trajectory:
+            self.line3d1 = []
+            self.line3d2 = []
+
+            for i in range(len(t10) - 1):
+                    # Plot the original trajectory
+                    self.line3d1.append(self.plot3d_ax.plot((0, 0), (0, 0), (0, 0), 'o-', markersize=5, color=(1, 0, 0, t10[i]/2), label='Original' if i == 0 else "")[0])
+
+                    # Plot the expected trajectory
+                    self.line3d2.append(self.plot3d_ax.plot((0, 0), (0, 0), (0, 0), 'o-', markersize=5, color=(0, 0, 1, t10[i]/2), label='Expected' if i == 0 else "")[0])
+        else:
+            self.line3d1 = self.plot3d_ax.plot(0, 0, 0, 'o-', markersize=5, color=(1, 0, 0, 0.2), label='Original')[0]
+            self.line3d2 = self.plot3d_ax.plot(0, 0, 0, 'o-', markersize=5, color=(0, 0, 1, 0.2), label='Expected')[0]
+            self.line3d1_main = self.plot3d_ax.plot(0, 0, 0, 'o-', markersize=5, color=(1, 0, 0, 1), label='Original')[0]
+            self.line3d2_main = self.plot3d_ax.plot(0, 0, 0, 'o-', markersize=5, color=(0, 0, 1, 1), label='Expected')[0]
+        
+        self.plot3d_ax.set_xlim([-2, 2])
+        self.plot3d_ax.set_ylim([-2, 2])
+        self.plot3d_ax.set_zlim([-2, 2])
     
     def update_plot(self, message=False):
         if self.event.is_set():
@@ -159,17 +183,18 @@ class MainWindow(QMainWindow, Form):
                 end_eff_real = np.frombuffer(self.shared_data["end_eff_real"].get_obj(), dtype=np.float64).reshape(xyz.shape)
                 end_eff_expect = np.frombuffer(self.shared_data["end_eff_expect"].get_obj(), dtype=np.float64).reshape(xyz.shape)
             
-            for i in range(len(t10) - 1):
-                # Plot the original trajectory
-                self.plot3d_ax.plot(end_eff_real[0][i:i+2], end_eff_real[1][i:i+2], end_eff_real[2][i:i+2],
-                        'o-', markersize=5, color=(1, 0, 0, t10[i]/2), label='Original' if i == 0 else "")
-
-                # Plot the expected trajectory
-                self.plot3d_ax.plot(end_eff_expect[0][i:i+2], end_eff_expect[1][i:i+2], end_eff_expect[2][i:i+2],
-                        'o-', markersize=5, color=(0, 0, 1, t10[i]/2), label='Expected' if i == 0 else "")
+            if fade_trajectory:
+                for i in range(len(t10) - 1):
+                    self.line3d1[i].set_data_3d(end_eff_real[0][i:i+2], end_eff_real[1][i:i+2], end_eff_real[2][i:i+2])
+                    self.line3d2[i].set_data_3d(end_eff_expect[0][i:i+2], end_eff_expect[1][i:i+2], end_eff_expect[2][i:i+2])
+            else:
+                self.line3d1.set_data_3d(end_eff_real[0], end_eff_real[1], end_eff_real[2])
+                self.line3d2.set_data_3d(end_eff_expect[0], end_eff_expect[1], end_eff_expect[2])
+                self.line3d1_main.set_data_3d(end_eff_real[0][-1], end_eff_real[1][-1], end_eff_real[2][-1])
+                self.line3d2_main.set_data_3d(end_eff_expect[0][-1], end_eff_expect[1][-1], end_eff_expect[2][-1])
 
             self.plot3d_canvas.draw()
-            self.event.clear()  # Reset event
+            # self.event.clear()  # Reset event
 
     def mouseDoubleClickEvent(self, e):
         if self.isFullscreen:
@@ -186,67 +211,57 @@ class MainWindow(QMainWindow, Form):
 
 
 class PlotProcess(multiprocessing.Process):
-    def __init__(self, shared_data, event):
+    def __init__(self, shared_data, event, queue):
         super().__init__()
         self.shared_data = shared_data
         self.event = event  # Event to signal updates
+        self.queue = queue
 
     def run(self):
         T0 = time.time()
         freq = 4 * np.pi / 100; A = 90
 
         counter = 0
-
         while True:
-            time.sleep(0.01)
-            T = time.time() - T0
+            while not self.queue.empty():
+                data = self.queue.get()
+                print(f"GUI received data: {data}")
 
-            x = A * np.sin(freq * (T - 0.1))
-            y = A * np.cos(freq * (T - 0.1))
-            z = T
+                T = time.time() - T0
+                x = A * np.sin(freq * (T - 0.1))
+                y = A * np.cos(freq * (T - 0.1))
+                z = T
+                counter += 1
+                with self.shared_data["lock"]:  # Ensure thread safety
 
-            counter += 1
-
-            A_values = A * np.linspace(1, 1.5, 6)  # 6 values for A, varying between 1 and 2
-            freq_values = np.linspace(freq - 1, freq, 6)  # 6 values for freq, varying between 1 and 3
-
-            fake_joints = np.array([A * np.sin(freq * (T - 0.1)) for A, freq in zip(A_values, freq_values)])
-
-            with self.shared_data["lock"]:  # Ensure thread safety
-
-                joints_real = np.frombuffer(self.shared_data["joints_real"].get_obj(), dtype=np.float64).reshape(joints.shape)
-                joints_expect = np.frombuffer(self.shared_data["joints_expect"].get_obj(), dtype=np.float64).reshape(joints.shape)
-
-                # Shift values
-                joints_real[:] = np.roll(joints_real, 1, axis=1)
-                joints_expect[:] = np.roll(joints_expect, 1, axis=1)
-
-                # Update latest values
-                joints_real[:6, 0] = fake_joints[:6]
-                joints_expect[:6, 0] = fake_joints[:6] + 10 * np.random.random(6)
-
-
-                if not counter%50:
-                    # Convert shared memory to a NumPy array
-                    end_eff_real = np.frombuffer(self.shared_data["end_eff_real"].get_obj(), dtype=np.float64).reshape(xyz.shape)
-                    end_eff_expect = np.frombuffer(self.shared_data["end_eff_expect"].get_obj(), dtype=np.float64).reshape(xyz.shape)
+                    joints_real = np.frombuffer(self.shared_data["joints_real"].get_obj(), dtype=np.float64).reshape(joints.shape)
+                    joints_expect = np.frombuffer(self.shared_data["joints_expect"].get_obj(), dtype=np.float64).reshape(joints.shape)
 
                     # Shift values
-                    end_eff_real[:] = np.roll(end_eff_real, -1, axis=1)
-                    end_eff_expect[:] = np.roll(end_eff_expect, -1, axis=1)
+                    joints_real[:] = np.roll(joints_real, 1, axis=1)
+                    joints_expect[:] = np.roll(joints_expect, 1, axis=1)
 
                     # Update latest values
-                    end_eff_real[0, -1] = x
-                    end_eff_real[1, -1] = y
-                    end_eff_real[2, -1] = z
+                    joints_real[:6, 0] = data['joints_r'][:6]
+                    joints_expect[:6, 0] = data['joints_e'][:6]
 
-                    end_eff_expect[0, -1] = x + random.random()
-                    end_eff_expect[1, -1] = y + random.random()
-                    end_eff_expect[2, -1] = z + random.random()
 
-                    counter = 0
+                    if not counter%1:
+                        # Convert shared memory to a NumPy array
+                        end_eff_real = np.frombuffer(self.shared_data["end_eff_real"].get_obj(), dtype=np.float64).reshape(xyz.shape)
+                        end_eff_expect = np.frombuffer(self.shared_data["end_eff_expect"].get_obj(), dtype=np.float64).reshape(xyz.shape)
 
-            self.event.set()  # Notify GUI to update
+                        # Shift values
+                        end_eff_real[:] = np.roll(end_eff_real, -1, axis=1)
+                        end_eff_expect[:] = np.roll(end_eff_expect, -1, axis=1)
+
+                        # Update latest values
+                        end_eff_real[:3, -1] = data['endeff_r']
+                        end_eff_expect[:3, -1] = data['endeff_e']
+
+                        counter = 0
+                self.event.set()  # Notify GUI to update
+            time.sleep(0.1)
 
 
 if __name__ == "__main__":

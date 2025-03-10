@@ -3,12 +3,13 @@ import websockets
 import json
 
 class Communicator:
-    def __init__(self, auto_reconnect=True, disconnect_callback=None):
+    def __init__(self, queue_list, auto_reconnect=True, disconnect_callback=None):
         self.uri = "ws://localhost:8765"
         self.websocket = None
         self.auto_reconnect = auto_reconnect
         self.disconnect_callback = disconnect_callback
         self.running = True
+        self.queue_list = queue_list
 
     async def connect(self):
         while self.running:
@@ -28,7 +29,11 @@ class Communicator:
             try:
                 data = await self.websocket.recv()
                 data = json.loads(data)
-                print(f"Received data: {data}")
+
+                # Send data to both GUI and simulation
+                for queue in self.queue_list:
+                    queue.put(data)
+
             except websockets.ConnectionClosed as e:
                 print(f"Connection closed with error: {e}.")
                 if self.disconnect_callback:
