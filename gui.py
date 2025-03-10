@@ -110,7 +110,7 @@ class MainWindow(QMainWindow, Form):
             self.jline1.append(ax.plot(x, y, 'y-', lw=1, label="setpoint")[0])
             self.jline2.append(ax.plot(x, y, 'r-', lw=1, label="sensor")[0])
             
-            ax.grid()
+            ax.grid(b=True, which='major', color='gray', linestyle='-')
             ax.set_ylim(-5, 5)
             # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=3, fancybox=True, shadow=True)
             ax.set_facecolor((0.0, 0.0, 0.0, 0.0))
