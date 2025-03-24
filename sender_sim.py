@@ -53,8 +53,8 @@ async def send_robot_joints(websocket, path):
         print(f"Connection closed with error: {e}")
 
 async def main():
-    async with websockets.serve(send_robot_joints, "localhost", 8765):
-        print("WebSocket server started on ws://localhost:8765")
+    async with websockets.serve(send_robot_joints, "0.0.0.0", 8765):
+        print("WebSocket server started on ws://0.0.0.0:8765")
         await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
