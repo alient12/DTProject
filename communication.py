@@ -4,7 +4,8 @@ import json
 
 class Communicator:
     def __init__(self, queue_list, auto_reconnect=True, disconnect_callback=None):
-        self.uri = "ws://localhost:8765"
+        self.ip = '132.207.28.217'
+        self.uri = f"ws://{self.ip}:8765"
         self.websocket = None
         self.auto_reconnect = auto_reconnect
         self.disconnect_callback = disconnect_callback

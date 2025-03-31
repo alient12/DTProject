@@ -2,3 +2,4 @@ swift-sim @ git+https://github.com/alient12/swift.git
 roboticstoolbox
 spatialmath-python
 QSwitchControl
+websockets==11.0.3
