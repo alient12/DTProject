@@ -43,3 +43,8 @@ To edit this example go to the following path in the container:
 ```python
 ~/moveit2_ws/src/hello_moveit/src/hello_moveit.cpp
 ```
+
+
+# Communication with the real robot
+
+The scripts for communication with the real robot are located in files ```main_ros2.py```, ```sender_sim2.py``` and ```sender_sim_ros2```.
