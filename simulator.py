@@ -16,7 +16,8 @@ class Simulator:
         
         # simulation costumizations
         self.dt = 0.05
-        self.take_snapshot = True
+        self.take_snapshot = False
+        self.check_singularity = False
         self.singular_threshold = 1e-2
         self.condition_number_threshold = 30
         
@@ -89,7 +90,10 @@ class Simulator:
                 # np.savetxt(file, [np.append(self.robot.q, end_effector_pos)], delimiter=",", fmt="%.6f")
 
                 # check if robot is in singularity and which links are involved
-                in_singularity, singular_links = self.robot.check_singularity(self.singular_threshold, self.condition_number_threshold)
+                if self.check_singularity:
+                    in_singularity, singular_links = self.robot.check_singularity(self.singular_threshold, self.condition_number_threshold)
+                else:
+                    in_singularity = False
 
 
                 # back robot color to normal if already changed
@@ -137,7 +141,10 @@ class Simulator:
                     self.robot.q = data['joints_r']
 
                     # check if robot is in singularity and which links are involved
-                    in_singularity, singular_links = self.robot.check_singularity(self.singular_threshold, self.condition_number_threshold)
+                    if self.check_singularity:
+                        in_singularity, singular_links = self.robot.check_singularity(self.singular_threshold, self.condition_number_threshold)
+                    else:
+                        in_singularity = False
 
 
                     # back robot color to normal if already changed

@@ -1,10 +1,109 @@
+# import asyncio
+# import websockets
+# import json
+
+# class Communicator:
+#     def __init__(self, queue_list, auto_reconnect=True, disconnect_callback=None):
+#         self.ip = '132.207.155.99'
+#         # self.ip = 'localhost'
+#         self.uri = f"ws://{self.ip}:8765"
+#         self.websocket = None
+#         self.auto_reconnect = auto_reconnect
+#         self.disconnect_callback = disconnect_callback
+#         self.running = True
+#         self.queue_list = queue_list
+#         self.send_queue = asyncio.Queue()
+
+#     async def connect(self):
+#         while self.running:
+#             try:
+#                 self.websocket = await websockets.connect(self.uri)
+#                 print("Connected successfully!")
+#                 return
+#             except Exception as e:
+#                 print(f"Connection failed with error: {e}.")
+#                 if not self.auto_reconnect:
+#                     break
+#                 print("Retrying in 5 seconds...")
+#                 await asyncio.sleep(5)
+
+#     async def listen(self):
+#         while self.running:
+#             try:
+#                 data = await self.websocket.recv()
+#                 data = json.loads(data)
+
+#                 # Send data to both GUI and simulation
+#                 for queue in self.queue_list:
+#                     queue.put(data)
+                
+#                 print(f"Received data: {data}")
+            
+#             except websockets.ConnectionClosed as e:
+#                 print(f"Connection closed with error: {e}.")
+#                 if self.disconnect_callback:
+#                     self.disconnect_callback()
+#                 if self.auto_reconnect:
+#                     print("Reconnecting...")
+#                     await self.connect()
+#                 else:
+#                     break
+
+#     async def sender(self):
+#         while self.running:
+#             try:
+#                 message = await self.send_queue.get()
+#                 await self.websocket.send(json.dumps(message))
+#                 print(f"Message sent successfully! msg: {message}")
+#             except websockets.ConnectionClosed as e:
+#                 print(f"Send failed, connection closed: {e}")
+#                 break
+    
+#     async def start(self):
+#         await asyncio.gather(self.listen(), self.sender())
+
+#     async def send_data(self, message):
+#         await self.send_queue.put(message)
+    
+#     async def close(self):
+#         self.running = False
+#         if self.websocket:
+#             await self.websocket.close()
+#             print("Connection closed manually.")
+
+
+# if __name__ == "__main__":
+#     def handle_disconnect():
+#         print("Disconnected from the server. Notifying the GUI...")
+
+#     async def periodic_sender(com):
+#         while True:
+#             await com.send_data({"status": "alive", "timestamp": asyncio.get_event_loop().time()})
+#             await asyncio.sleep(5)
+
+#     async def main():
+#         com = Communicator(queue_list=[], auto_reconnect=True, disconnect_callback=handle_disconnect)
+#         await com.connect()
+#         # listen_task = asyncio.create_task(com.listen())
+#         # asyncio.create_task(com.start())
+#         asyncio.create_task(com.listen())
+#         # asyncio.create_task(periodic_sender(com))
+
+#         # Wait for 1 second before closing the connection
+#         # await asyncio.sleep(1)
+#         # await com.close()
+
+#         # await listen_task
+
+#     asyncio.run(main())
 import asyncio
 import websockets
 import json
 
 class Communicator:
     def __init__(self, queue_list, auto_reconnect=True, disconnect_callback=None):
-        self.ip = '132.207.28.217'
+        self.ip = '132.207.155.99'
+        self.ip = 'localhost'
         self.uri = f"ws://{self.ip}:8765"
         self.websocket = None
         self.auto_reconnect = auto_reconnect
@@ -57,14 +156,14 @@ if __name__ == "__main__":
         print("Disconnected from the server. Notifying the GUI...")
 
     async def main():
-        com = Communicator(auto_reconnect=True, disconnect_callback=handle_disconnect)
+        com = Communicator(queue_list=[], auto_reconnect=True, disconnect_callback=handle_disconnect)
         await com.connect()
         # listen_task = asyncio.create_task(com.listen())
         asyncio.create_task(com.listen())
 
         # Wait for 1 second before closing the connection
-        await asyncio.sleep(1)
-        await com.close()
+        # await asyncio.sleep(1)
+        # await com.close()
 
         # await listen_task
 
